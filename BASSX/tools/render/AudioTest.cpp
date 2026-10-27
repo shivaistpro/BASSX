@@ -992,6 +992,7 @@ static void testEveryParameterImpact()
         // tabella a piu' frame: con una tabella a frame singolo la posizione non esiste
         if (id.endsWith ("_position")) ctx[id.upToFirstOccurrenceOf ("_", true, false) + "wave"] = norm (id.upToFirstOccurrenceOf ("_", true, false) + "wave", 6.0f);
         if (id == P::fmSource) { ctx[P::fmTarget] = norm (P::fmTarget, 1.0f); }
+        if (id == P::syncEnable) ctx[P::osc (1, "semi")] = norm (P::osc (1, "semi"), 7.0f);   // sync a pari altezza non cambia nulla
         if (id == P::f2EnvSource) ctx[P::f2EnvAmount] = norm (P::f2EnvAmount, 0.8f);
         if (id.startsWith ("env1_")) ctx[P::env (0, "sustain")] = norm (P::env (0, "sustain"), 0.2f);
         if (id.startsWith ("env") && id.endsWith ("curve_r")) ctx[id.replace ("curve_r", "release")] = norm (id.replace ("curve_r", "release"), 0.6f);
@@ -1269,6 +1270,45 @@ static void testLoopExport()
 //==============================================================================
 /** Campione trascinato -> wavetable: periodo trovato, forma conservata,
     intonata sulla tastiera, salvata nella sessione. */
+/** Hard sync: OSC 2 sincronizzato suona all'altezza di OSC 1 (il master), su
+    ogni nota. Prima il master restava a 110 Hz fissi. */
+static void testOscSync()
+{
+    using namespace bassx;
+    auto periodAt = [] (int note)
+    {
+        BassXAudioProcessor p;
+        p.presetManager.loadPresetByName ("Init");
+        setParam (p, ParamID::osc (0, "enable"), 0.0f);
+        setParam (p, ParamID::osc (1, "enable"), 1.0f);
+        setParam (p, ParamID::osc (1, "level"), 1.0f);
+        setParam (p, ParamID::osc (1, "wave"), 0.0f);          // Analog Saw
+        setParam (p, ParamID::osc (1, "semi"), 7.0f);          // slave una quinta sopra
+        setParam (p, ParamID::syncEnable, 1.0f);
+        setParam (p, ParamID::f1Model, (float) (int) MultiFilter::Model::Bypass);
+        setParam (p, ParamID::env (0, "sustain"), 1.0f);
+        p.prepareToPlay (48000.0, 256);
+        std::vector<float> mono;
+        juce::AudioBuffer<float> buf (2, 256);
+        for (int b = 0; b < 120; ++b)
+        {
+            juce::MidiBuffer midi;
+            if (b == 0) midi.addEvent (juce::MidiMessage::noteOn (1, note, (juce::uint8) 90), 0);
+            buf.clear(); p.processBlock (buf, midi);
+            for (int i = 0; i < 256; ++i) mono.push_back (buf.getSample (0, i));
+        }
+        std::vector<float> tail (mono.begin() + 12000, mono.end());
+        return SampleWavetable::detectPeriod (tail, 48000.0);
+    };
+    for (int note : { 40, 52 })
+    {
+        const double expected = 48000.0 / (440.0 * std::pow (2.0, (note - 69) / 12.0));
+        const double got = periodAt (note);
+        check (std::abs (got - expected) < 2.0, "osc sync: nota " + juce::String (note) + " periodo " + juce::String (got, 1)
+                                                + " campioni (atteso " + juce::String (expected, 1) + ", master = OSC 1)");
+    }
+}
+
 static void testSampleWavetable()
 {
     using namespace bassx;
@@ -1444,9 +1484,92 @@ static void testLayerCoherence()
     check (std::abs (deg (ph, p0) - 90.0) < 3.0, "layer: PHASE 25% = fondamentale spostata di 90 gradi (" + juce::String (deg (ph, p0), 1) + ")");
 }
 
+//==============================================================================
+/** "--params <file.md>": tabella di tutti i parametri (ID, nome, range, default,
+    valori) e dei preset di fabbrica, generata dal plugin vero: la documentazione
+    in docs/PARAMETRI.md non puo' divergere dal codice. */
+static int dumpParameters (const juce::File& out)
+{
+    BassXAudioProcessor proc;
+    juce::String md;
+    md << "# BASSX - Riferimento parametri\n\n"
+       << "Generato da `BassXAudioTest --params` (versione " << JucePlugin_VersionString << "). "
+       << "Non modificare a mano: rigenerare dopo ogni cambio ai parametri.\n\n"
+       << "Colonne: **ID** = identificativo per automazione e stato salvato; **Range** e **Default** "
+       << "nelle unita' mostrate dal plugin; per le scelte sono elencati tutti i valori.\n\n";
+
+    // sezione del manuale (docs/MANUALE.md) per prefisso dell'ID, nell'ordine del manuale
+    const juce::StringArray order { "Oscillatori", "Filtri", "Inviluppi", "LFO", "Voce, accento, glide, intonazione",
+                                    "Fish (Devil Fish + Neural Drive)", "Sequencer", "Arpeggiatore", "Effetti",
+                                    "Tube", "Space", "Duck (sidechain)", "Uscita" };
+    // valori grezzi a 7 decimali (parametri senza formattazione propria) -> 2 decimali
+    auto fmt = [] (const juce::String& t)
+    {
+        return (t.containsOnly ("-0123456789.") && t.fromFirstOccurrenceOf (".", false, false).length() > 3)
+                 ? juce::String (t.getFloatValue(), 2) : t;
+    };
+    auto sectionOf = [] (const juce::String& g) -> juce::String
+    {
+        if (g.startsWith ("osc") || g == "sub" || g == "noise" || g == "fm" || g == "ring" || g == "sync") return "Oscillatori";
+        if (g == "f1" || g == "f2" || g == "filter") return "Filtri";
+        if (g.startsWith ("env")) return "Inviluppi";
+        if (g.startsWith ("lfo")) return "LFO";
+        if (g == "accent" || g == "glide" || g == "voice" || g == "poly" || g == "master" || g == "bend" || g == "velocity")
+            return "Voce, accento, glide, intonazione";
+        if (g == "df") return "Fish (Devil Fish + Neural Drive)";
+        if (g == "seq") return "Sequencer";
+        if (g == "arp" || g == "play") return "Arpeggiatore";
+        if (g == "tube") return "Tube";
+        if (g == "space") return "Space";
+        if (g == "sc") return "Duck (sidechain)";
+        if (g == "output" || g == "oversampling") return "Uscita";
+        return "Effetti";
+    };
+
+    std::map<juce::String, juce::String> body;        // sezione -> markdown
+    std::map<juce::String, juce::String> lastGroup;
+    int count = 0;
+    for (auto* prm : proc.getParameters())
+    {
+        auto* rp = dynamic_cast<juce::RangedAudioParameter*> (prm);
+        if (rp == nullptr) continue;
+        const juce::String id = rp->paramID;
+        const juce::String group = id.upToFirstOccurrenceOf ("_", false, false);
+        const juce::String sec = sectionOf (group);
+        auto& b = body[sec];
+        if (lastGroup[sec] != group)
+        {
+            lastGroup[sec] = group;
+            b << "\n### `" << group << "_*`\n\n| ID | Nome | Range | Default |\n|---|---|---|---|\n";
+        }
+        juce::String range;
+        if (auto* c = dynamic_cast<juce::AudioParameterChoice*> (rp))
+            range = c->choices.joinIntoString (", ");
+        else if (dynamic_cast<juce::AudioParameterBool*> (rp) != nullptr)
+            range = "Off, On";
+        else
+            range = fmt (rp->getText (0.0f, 32)) + " ... " + fmt (rp->getText (1.0f, 32));
+        b << "| `" << id << "` | " << rp->getName (64) << " | " << range.replace ("|", "/") << " | "
+          << fmt (rp->getText (rp->getDefaultValue(), 32)) << " |\n";
+        ++count;
+    }
+    for (auto& sec : order)
+        if (body.count (sec) != 0)
+            md << "\n## " << sec << "\n" << body[sec];
+
+    md << "\n**Totale: " << count << " parametri.**\n\n## Preset di fabbrica\n\n";
+    for (int i = 0; i < proc.presetManager.getNumPresets(); ++i)
+        md << (i + 1) << ". " << proc.presetManager.getPresetName (i) << "\n";
+
+    return out.replaceWithText (md, false, false, "\n") ? 0 : 1;
+}
+
 int main (int argc, char** argv)
 {
     juce::ScopedJuceInitialiser_GUI init;
+
+    if (argc > 2 && juce::String (argv[1]) == "--params")
+        return dumpParameters (juce::File::getCurrentWorkingDirectory().getChildFile (argv[2]));
 
     BassXAudioProcessor proc;
 
@@ -1735,6 +1858,7 @@ int main (int argc, char** argv)
     testGlitchRepeat();
     testLoopExport();
     testSampleWavetable();
+    testOscSync();
     testLayerCoherence();
     testEveryParameterImpact();
 

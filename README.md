@@ -4,7 +4,10 @@ Sintetizzatore per bassi VST3 / AU / Standalone (JUCE): modello del Bass Line
 del 1982 con filtro ladder a diodi, accento e slide, dentro un motore wavetable
 moderno con sequencer, arpeggiatore, sidechain e rack di effetti.
 
-- Documentazione completa, build e test: [`BASSX/README.md`](BASSX/README.md)
+- **Manuale d'uso** — ogni controllo, pagina per pagina: [`docs/MANUALE.md`](docs/MANUALE.md)
+- **Riferimento parametri** — tutti i 307 parametri con ID, range e default: [`docs/PARAMETRI.md`](docs/PARAMETRI.md)
+- **Architettura** — sorgenti, percorso del segnale, thread, stato, test: [`docs/ARCHITETTURA.md`](docs/ARCHITETTURA.md)
+- Panoramica tecnica, build e note DSP: [`BASSX/README.md`](BASSX/README.md)
 - Novità: [`BASSX/CHANGELOG.md`](BASSX/CHANGELOG.md)
 - Installazione dei binari: [`INSTALLATION README.txt`](INSTALLATION%20README.txt)
 - Licenza: [`LICENSE`](LICENSE) — tutti i diritti riservati

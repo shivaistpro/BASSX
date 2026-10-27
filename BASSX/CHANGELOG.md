@@ -1,5 +1,16 @@
 # BASSX — Changelog
 
+## 1.5.1 — documentazione completa, OSC SYNC corretto
+
+- **Documentazione** nella cartella `docs/`: manuale d'uso con ogni controllo
+  pagina per pagina (`MANUALE.md`), riferimento di tutti i 307 parametri con
+  ID, range e default generato dal plugin stesso (`PARAMETRI.md`,
+  `BassXAudioTest --params`), architettura del codice (`ARCHITETTURA.md`).
+- **OSC SYNC**: la frequenza del master non veniva mai impostata e restava
+  110 Hz fissi: con SYNC acceso OSC 2 suonava sempre in La, su qualunque nota.
+  Ora OSC 2 riparte a ogni ciclo di OSC 1 e l'altezza segue la nota.
+- Test: 123 verifiche (nuovo: altezza con SYNC su due note).
+
 ## 1.5.0 — layer in fase: un basso solo, non sorgenti sovrapposte
 
 - **Causa**: ogni oscillatore partiva da una fase casuale (scelta all'apertura del

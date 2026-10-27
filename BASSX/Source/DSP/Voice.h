@@ -509,6 +509,12 @@ public:
 
                 osc.setFrequency (baseHz * ratio[index] * std::exp2 (pitchMod));
 
+                // Hard sync: OSC 2 riparte a ogni ciclo di OSC 1 (il master). Prima
+                // la frequenza del master non veniva mai impostata e restava 110 Hz
+                // fissi: con SYNC acceso OSC 2 suonava sempre in La, su ogni nota.
+                if (index == 1 && p.syncEnabled)
+                    osc.setSyncFrequency (baseHz * ratio[0] * std::exp2 (dests[ModDest::Osc1Pitch] + globalPitchOctaves));
+
                 const float posMod = dests[(ModDest) ((int) ModDest::Osc1Position + index * 5)];
                 osc.setFramePosition (std::clamp (op.position + posMod, 0.0f, 1.0f));
 

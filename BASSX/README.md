@@ -5,11 +5,22 @@ Bass Line del 1982 — filtro ladder a diodi, circuito di accento capacitivo,
 slide legato — costruito dentro un motore wavetable moderno con unison,
 matrice di modulazione, sequencer a 16 passi e rack di effetti.
 
+> **Documentazione completa:** [manuale d'uso](../docs/MANUALE.md) (ogni
+> controllo, pagina per pagina) · [riferimento parametri](../docs/PARAMETRI.md)
+> (tutti i 307 parametri con range e default) ·
+> [architettura del codice](../docs/ARCHITETTURA.md).
+
 Dalla 1.1: sezione **Fish** con i controlli stile Devil Fish e uno stadio di
 saturazione **neurale** (GRU), **arpeggiatore** combinabile col sequencer,
 **catena effetti riordinabile e modulabile**, sezione **Space** per panorama e
 immagine stereo, **Ext Mode** per processare audio esterno. Novità e
 correzioni complete in `CHANGELOG.md`.
+
+Dalla 1.2 alla 1.5: preamp valvolare **TUBE** (motore ETA-1, 26 profili),
+interfaccia cyber con temi colore, **DUCK** (sidechain a curva disegnabile con
+banda e fase), **Glitch** e **Beat Repeat**, **export WAV** del loop composto,
+**campione → wavetable** trascinando un file sull'oscillatore, layer degli
+oscillatori sempre in fase (un basso solo, non sorgenti sovrapposte).
 
 ---
 
@@ -65,7 +76,7 @@ l'aliasing: gli oscillatori sono già band-limited per costruzione.
 - **4 LFO** con 10 forme (comprese sample & hold, random smussato e mappa
   caotica), sincronizzabili al tempo dell'host su 16 divisioni,
   con fade-in, offset di fase, modalità di trigger e lisciatura.
-- **Matrice di modulazione a 16 slot** con 19 sorgenti, 43 destinazioni e
+- **Matrice di modulazione a 16 slot** con 18 sorgenti, 50 destinazioni e
   sorgente **VIA** che scala la profondità di ciascuno slot.
 - **Circuito di accento** con condensatore che accumula carica fra note
   ravvicinate — è quello che fa "pompare" le raffiche di sedicesimi accentati.
@@ -124,7 +135,7 @@ sincronizzato. Goniometro e correlazione nella pagina SPACE.
 Distorsione (8 algoritmi, oversampling 4x FIR a fase lineare), EQ 3 bande,
 Chorus, Phaser, Delay (sync, ping-pong, filtri nel loop), Riverbero (FDN a 8
 linee, matrice di Householder), Compressore (feed-forward, RMS o peak,
-ginocchio morbido), Space — in **8 slot riordinabili**: ogni slot sceglie
+ginocchio morbido), Space, Glitch e Beat Repeat a tempo — in **10 slot riordinabili**: ogni slot sceglie
 l'effetto, l'ordine si cambia dall'host o dalla pagina FX. Limiter con
 lookahead sempre in fondo.
 
@@ -143,7 +154,7 @@ di recente.
 
 ## Preset
 
-33 preset di fabbrica in 12 categorie: Basics, Acid, Reese, Sub, Pluck, FX,
+36 preset di fabbrica in 12 categorie: Basics, Acid, Reese, Sub, Pluck, FX,
 Sequencer, Poly, Hardware, Fish, Arp, Space. **Ogni preset porta con sé i propri quattro
 inviluppi completi**, la matrice di modulazione e i pattern del sequencer.
 
@@ -218,25 +229,20 @@ cmake -B build -DJUCE_PATH=... && cmake --build build --config Release
 
 ## Interfaccia
 
-Il pannello superiore è in **alluminio spazzolato**, quello inferiore in
-**ABS stampato**, i knob sono **cromati con zigrinatura**. Non sono gradienti
-e forme geometriche: sono texture generate risolvendo il modello ottico del
-materiale — riflessione anisotropa per il metallo spazzolato, mappa d'ambiente
-con orizzonte netto per il cromo, microrugosità più speculare acromatica larga
-per la plastica, occlusione ambientale nei recessi, ombre proiettate coerenti
-con una singola luce a 55°.
+Stile "cyber" vettoriale: pannelli scuri smussati, knob e LED disegnati a
+vettori (nitidi a qualunque dimensione), finestra ridimensionabile. Cinque temi
+colore (NEON, CYAN, PLASMA, AMBER, ICE) più CUSTOM con colore a scelta.
 
-I knob sono sprite sheet di 65 fotogrammi su 270°: la riflessione si sposta
-correttamente durante la rotazione, cosa che un knob disegnato a vettori non
-può fare.
+In alto: browser dei preset, tema, modalità voce, voci polifoniche, meter.
+Sotto: la fila principale di un Bass Line (WAVEFORM con ON, TUNING, CUT OFF,
+RESONANCE, ENV MOD, DECAY, ACCENT, SLIDE, DRIVE, VOLUME), poi le 12 pagine
+**OSC**, **FILTER**, **FISH**, **ENV**, **LFO**, **MOD**, **SEQ**, **ARP**,
+**FX**, **TUBE**, **SPACE**, **DUCK** e la tastiera a schermo.
 
-Il layout ricalca la logica di quel tipo di hardware — testata con display,
-fila di controlli principali sempre visibile, banda arancione di separazione,
-sezione modulare scura sotto — senza riprodurre logo, marchio denominativo,
-font o grafiche di pannello di alcun produttore.
+Il layout ricalca la logica di quel tipo di hardware senza riprodurre logo,
+marchio denominativo, font o grafiche di pannello di alcun produttore.
 
-Pagine: **OSC**, **FILTER**, **FISH**, **ENV**, **LFO**, **MOD**, **SEQ**,
-**ARP**, **FX**, **SPACE**.
+Ogni controllo, pagina per pagina: [`docs/MANUALE.md`](../docs/MANUALE.md).
 
 ---
 
