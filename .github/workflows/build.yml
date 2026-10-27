@@ -1,0 +1,78 @@
+name: BASSX build
+
+# Compila, testa e impacchetta BASSX per macOS (universal). Windows: build_windows.bat in locale.
+# Ogni piattaforma produce la propria cartella di installazione come artifact:
+#   BASSX-macOS-Install   (installer BASSX-<ver>.pkg + VST3 + AU + app + "Install BASSX.command")
+# Su un tag v* le due cartelle vengono anche allegate alla release GitHub.
+
+on:
+  push:
+    branches: [ main, 'release/**' ]
+    tags: [ 'v*' ]
+  workflow_dispatch:
+
+env:
+  JUCE_TAG: 8.0.12
+
+jobs:
+  macos:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: JUCE
+        run: git clone --depth 1 --branch "$JUCE_TAG" https://github.com/juce-framework/JUCE.git "$RUNNER_TEMP/JUCE"
+
+      - name: Configure
+        run: >
+          cmake -S BASSX -B build -G Xcode
+          -DJUCE_PATH="$RUNNER_TEMP/JUCE"
+          -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+          -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0
+          -DBASSX_BUILD_GUI_RENDERER=ON
+
+      - name: Build
+        run: cmake --build build --config Release --target BASSX_VST3 BASSX_AU BASSX_Standalone BassXAudioTest
+
+      - name: Audio test
+        run: build/BassXAudioTest_artefacts/Release/BassXAudioTest
+
+      - name: pluginval (strictness 10)
+        run: |
+          curl -sSL -o pv.zip https://github.com/Tracktion/pluginval/releases/latest/download/pluginval_macOS.zip
+          unzip -q pv.zip
+          ./pluginval.app/Contents/MacOS/pluginval --strictness-level 10 --validate-in-process \
+            --timeout-ms 600000 --validate build/BASSX_artefacts/Release/VST3/BASSX.vst3
+
+      - name: Package
+        run: |
+          VER=$(head -n1 BASSX/VERSION | tr -d '[:space:]')
+          OUT="BASSX-v$VER-macOS-Install"
+          ART=build/BASSX_artefacts/Release
+          mkdir -p "$OUT"
+          cp -R "$ART/VST3/BASSX.vst3" "$ART/AU/BASSX.component" "$ART/Standalone/BASSX.app" "$OUT/"
+          for b in "$OUT/BASSX.vst3" "$OUT/BASSX.component" "$OUT/BASSX.app"; do codesign --force --deep -s - "$b"; done
+          cp "BASSX/packaging/Install BASSX.command" "INSTALLATION README.txt" BASSX/CHANGELOG.md "$OUT/"
+          chmod +x "$OUT/Install BASSX.command"
+          bash BASSX/packaging/make_pkg.sh "$OUT" "$VER" "$OUT/BASSX-$VER.pkg"
+          ditto -c -k --keepParent "$OUT" "$OUT.zip"
+          echo "PKG=$OUT" >> "$GITHUB_ENV"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BASSX-macOS-Install
+          path: ${{ env.PKG }}.zip
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [ macos ]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/**/*.zip

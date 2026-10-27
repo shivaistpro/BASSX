@@ -1,0 +1,25 @@
+# build
+build/
+build-win/
+BASSX/build/
+releases/
+test-output/
+build_log.txt
+commit_msg.txt
+# binari Mac (distribuiti a parte, non versionati)
+/BASSX.vst3/
+/BASSX.component/
+/BASSX.app/
+.DS_Store
+.vs/
+build-mac/
+BASSX/build-dev/
+src_snapshot.tgz
+_sync*.tgz
+ci_failed_log.txt
+# dati di sessione / personali: mai in repo
+.env
+*.wav
+_incoming/
+BASSX/tools/calibration/bx/
+BASSX/tools/calibration/refs/

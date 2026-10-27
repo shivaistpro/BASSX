@@ -1,0 +1,32 @@
+BASSX — Licenza d'uso (tutti i diritti riservati)
+
+Copyright (c) 2026 il titolare di questa repository
+
+Il software, i preset, la grafica e la documentazione contenuti in questa
+repository ("il Software") sono protetti dal diritto d'autore. Al titolare
+restano tutti i diritti non concessi espressamente qui sotto.
+
+CONSENTITO
+- Scaricare il Software, compilarlo e installarlo sui propri computer.
+- Usarlo, anche per produrre musica a scopo commerciale. La musica e i file
+  audio creati con il Software appartengono a chi li crea.
+- Salvare preset propri e configurare la build per il proprio PC (percorso di
+  JUCE, cartelle di output), senza distribuirli insieme al Software.
+
+NON CONSENTITO senza autorizzazione scritta del titolare
+- Modificare, tradurre o creare opere derivate dal Software.
+- Ridistribuire, ripubblicare, vendere, concedere in sublicenza o rendere
+  disponibile a terzi il Software o sue parti (sorgenti o binari, VST3, AU,
+  Standalone), in forma modificata o meno.
+- Rimuovere o alterare questa licenza o le note di copyright.
+
+Il fork su GitHub esiste solo come funzione tecnica della piattaforma: non
+concede nessuno dei diritti esclusi sopra.
+
+Componenti di terze parti (JUCE, VST3 SDK, pluginval) restano sotto le
+rispettive licenze.
+
+ESCLUSIONE DI GARANZIA
+IL SOFTWARE E' FORNITO "COSI' COM'E'", SENZA GARANZIE DI ALCUN TIPO. IN NESSUN
+CASO IL TITOLARE E' RESPONSABILE PER DANNI DERIVANTI DALL'USO DEL SOFTWARE,
+INCLUSA LA PERDITA DI PROGETTI, FILE AUDIO O DATI.
